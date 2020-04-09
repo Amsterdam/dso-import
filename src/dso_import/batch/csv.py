@@ -18,6 +18,14 @@ def parse_date_time(s):
         return date.fromisoformat(s)
 
 
+def parse_date(s):
+    if not s:
+        return None
+    if len(s) > 10:
+        s = s[:10]
+    return date.fromisoformat(s)
+
+
 def parse_yesno_boolean(value):
     return True if value == "J" or value == "Y" else False if value == "N" else None
 

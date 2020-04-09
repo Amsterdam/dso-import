@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "django.contrib.postgres",
-    "django_filters",
+    # "django_filters",
     "drf_spectacular",
     "rest_framework",
     "rest_framework_gis",
@@ -50,17 +50,11 @@ INSTALLED_APPS = [
     # Own apps
     "dso_api.datasets",
     "dso_api.dynamic_api",
+    "dso_import",
 ]
 
 MIDDLEWARE = [
 ]
-
-if DEBUG:
-    INSTALLED_APPS += [
-        "debug_toolbar",
-        "django_extensions",
-    ]
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "dso_api.urls"
 
@@ -128,7 +122,7 @@ LOGGING = {
         #     'level': 'DEBUG',
         #     'handlers': ['console'],
         # },
-        "dso_api": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+        "dso_import": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
     },
 }
 
@@ -150,19 +144,7 @@ REST_FRAMEWORK = dict(
     UNAUTHENTICATED_USER={},
     UNAUTHENTICATED_TOKEN={},
     DEFAULT_AUTHENTICATION_CLASSES=[
-        # 'rest_framework.authentication.BasicAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication',
     ],
-    DEFAULT_PAGINATION_CLASS="rest_framework_dso.pagination.DSOPageNumberPagination",
-    DEFAULT_SCHEMA_CLASS="rest_framework_dso.openapi.DSOAutoSchema",
-    DEFAULT_RENDERER_CLASSES=[
-        "rest_framework_dso.renderers.HALJSONRenderer",
-        "dso_api.lib.renderers.PatchedBrowsableAPIRenderer",
-    ],
-    DEFAULT_FILTER_BACKENDS=[
-        "django_filters.rest_framework.backends.DjangoFilterBackend",
-    ],
-    EXCEPTION_HANDLER="rest_framework_dso.views.exception_handler",
     COERCE_DECIMAL_TO_STRING=True,
 )
 

@@ -3,8 +3,8 @@ import sys
 
 from django.core.management import BaseCommand
 
-from dso_api.batch import batch
-from dso_api.datasets.bagh.batch import ImportBagHJob
+from dso_import.batch import batch
+from dso_import.bagh.batch import ImportBagHJob
 
 log = logging.getLogger(__name__)
 

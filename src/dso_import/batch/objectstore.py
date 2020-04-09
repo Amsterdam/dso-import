@@ -6,7 +6,7 @@ from pathlib import Path
 
 from swiftclient.client import Connection
 
-from dso_api import settings
+from dso_import import settings
 
 log = logging.getLogger(__name__)
 

@@ -6,9 +6,9 @@ from collections import defaultdict
 import sqlparse
 
 from django.db import connection, transaction
-from dso_api import settings
-from dso_api.batch import batch, csv, geo
-from dso_api.batch.objectstore import download_file
+from dso_import import settings
+from dso_import.batch import batch, csv, geo
+from dso_import.batch.objectstore import download_file
 from dso_api.datasets.models import Dataset
 
 GOB_SHAPE_ENCODING = "utf-8"
@@ -141,8 +141,8 @@ class ImportBagHTask(batch.BasicTask):
         identificatie = r["identificatie"]
         volgnummer = int(r["volgnummer"])
         id = create_id(identificatie, volgnummer)
-        begin_geldigheid = csv.parse_date_time(r["beginGeldigheid"])
-        eind_geldigheid = csv.parse_date_time(r["eindGeldigheid"]) or None
+        begin_geldigheid = csv.parse_date(r["beginGeldigheid"])
+        eind_geldigheid = csv.parse_date(r["eindGeldigheid"]) or None
         if not csv.is_valid_date_range(begin_geldigheid, eind_geldigheid):
             log.error(
                 f"{self.name.title()} {id} has invalid geldigheid {begin_geldigheid} {eind_geldigheid}; skipping"  # noqa: E501
@@ -179,7 +179,7 @@ class ImportBagHTask(batch.BasicTask):
         if "code" in r:
             values["code"] = r["code"]
         if "documentdatum" in r:
-            values["documentdatum"] = csv.parse_date_time(r["documentdatum"])
+            values["documentdatum"] = csv.parse_date(r["documentdatum"])
             values["documentnummer"] = r["documentnummer"]
 
         if "aanduidingInOnderzoek" in r:
@@ -258,7 +258,7 @@ class ImportBagHTask(batch.BasicTask):
 class CreateBagHTables(batch.BasicTask):
     def process(self):
         processed = 0
-        with open("dso_api/datasets/bagh/bagh_create.sql", "r") as sql_file:
+        with open("dso_import/datasets/bagh/bagh_create.sql", "r") as sql_file:
             with connection.cursor() as c:
                 for sql in sqlparse.split(sql_file.read()):
                     if sql and not sql.isspace():
