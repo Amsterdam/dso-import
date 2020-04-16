@@ -8,9 +8,6 @@ services:
       POSTGRES_DB: dso_api
       POSTGRES_USER: dso_api
       POSTGRES_PASSWORD: insecure
-    volumes:
-      - "~/.ssh/datapunt.key:/root/.ssh/datapunt.key"
-      - .:/host
   importer:
     build:
       context: src/
@@ -18,7 +15,9 @@ services:
       - database
     environment:
       GOB_OBJECTSTORE_PASSWORD:
+      DATABASE_URL: "postgres://dataservices:insecure@database/dataservices"
+      DATA_DIR:
     volumes:
       - ./src:/app
     command:
-        python manage run_import bagh
+        python manage.py run_import bagh

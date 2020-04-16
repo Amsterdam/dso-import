@@ -56,7 +56,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
 ]
 
-ROOT_URLCONF = "dso_api.urls"
+# ROOT_URLCONF = "dso_api.urls"
 
 TEMPLATES = [
     {
@@ -89,7 +89,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 DATABASES = {
     "default": env.db_url(
         "DATABASE_URL",
-        default="postgres://dso_api:insecure@localhost:5415/dso_api",
+        default="postgres://dataservices:insecure@localhost:5415/dataservices",
         engine="django.contrib.gis.db.backends.postgis",
     ),
 }

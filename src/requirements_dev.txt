@@ -1,0 +1,12 @@
+# Base website
+-r ./requirements.txt
+
+# Tools for maintaining requirements.txt:
+pip-tools == 4.5.1
+pur == 5.3.0
+
+# Useful extra developer packages:
+pytest-sugar == 0.9.2
+termcolor >= 1.1.0  # for pytest-sugar
+pre-commit == 2.1.1
+

@@ -239,11 +239,14 @@ class ImportBagHTask(batch.BasicTask):
             log.error(f"Multiple open eind_geldigheid for: {multiple_endranges}")
             return 1
 
+        # When checking for overlapping ranges we do not check for start_dates that are
+        # the same because that happens quite often
+        # the same because that happens quite often
         cursor.execute(
             f"""SELECT w1.id, w2.id FROM {self.temp_table} w1
         JOIN {self.temp_table} w2 ON w1.identificatie = w2.identificatie
         WHERE w1.volgnummer <> w2.volgnummer
-        AND  w1.begin_geldigheid >= w2.begin_geldigheid
+        AND  w1.begin_geldigheid > w2.begin_geldigheid
         AND  (w1.begin_geldigheid < w2.eind_geldigheid OR w2.eind_geldigheid IS NULL)
         """
         )
@@ -427,7 +430,7 @@ class ImportBagHJob(batch.BasicJob):
         self.stash = {}
 
     def __del__(self):
-        os.environ.pop("SHAPE_ENCODING")
+        os.environ.pop("SHAPE_ENCODING", None)
         self.stash.clear()
 
     def tasks(self):

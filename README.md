@@ -9,6 +9,10 @@ Therefore we need the dso-api imported as package.
 That package can be installed with :
 
     pip install ../dso-api/src
+    
+or with
+
+    pip  install git+https://github.com/Amsterdam/dso-api.git@df28a53faba4c8e96f5e54a8b684978c1b3a5435#egg=dso-api\&subdirectory=src
 
 Or from any other location where dso-api is located.
 

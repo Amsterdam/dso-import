@@ -1,7 +1,9 @@
 FROM amsterdam/python:3.8-buster AS builder
 MAINTAINER datapunt@amsterdam.nl
 
-RUN pip install --no-cache-dir amsterdam-dso-api
+COPY requirements* ./
+ARG PIP_REQUIREMENTS=requirements.txt
+RUN pip install --no-cache-dir -r $PIP_REQUIREMENTS
 
 # Start runtime image,
 FROM amsterdam/python:3.8-slim-buster
@@ -10,11 +12,9 @@ FROM amsterdam/python:3.8-slim-buster
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY --from=builder /usr/local/lib/python3.8/site-packages/ /usr/local/lib/python3.8/site-packages/
 
-
 WORKDIR /app
 COPY . ./
 
-ENV DJANGO_SETTINGS_MODULE=dso_api.settings DJANGO_DEBUG=false
+ENV DJANGO_SETTINGS_MODULE=dso_import.settings DJANGO_DEBUG=false
 
 USER datapunt
-CMD ["python manage run_import bagh"]
