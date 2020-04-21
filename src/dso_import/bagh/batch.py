@@ -374,13 +374,13 @@ class ImportVerblijfsobjectTask(ImportBagHTask):
 
     def after(self):
         self.save_pandrelatie()
+        super().after()
         cursor = connection.cursor()
         with transaction.atomic():
             cursor.execute(f"TRUNCATE {self.pandrelatie_table}")
             cursor.execute(f"INSERT INTO  {self.pandrelatie_table} SELECT * FROM {self.pandrelatie_temp_table}")
         self.model._meta.db_table = self.pandrelatie_table
         self.panden.clear()
-        super().after()
 
     def gen_pand_vbo_objects(self):
             for pand_id, vbo_ids in self.pandrelatie.items():
