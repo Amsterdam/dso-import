@@ -9,8 +9,7 @@ services:
       POSTGRES_USER: dso_api
       POSTGRES_PASSWORD: insecure
   importer:
-    build:
-      context: src/
+    image: amsterdam/python:3.8-buster
     links:
       - database
     environment:
@@ -20,4 +19,4 @@ services:
     volumes:
       - ./src:/app
     command:
-        python manage.py run_import bagh
+        ./start_import.sh --create
