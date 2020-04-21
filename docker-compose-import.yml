@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  database:
+    image: amsterdam/postgres11
+    ports:
+      - "5415:5432"
+    environment:
+      POSTGRES_DB: dso_api
+      POSTGRES_USER: dso_api
+      POSTGRES_PASSWORD: insecure
+  importer:
+    image: amsterdam/python:3.8-buster
+    links:
+      - database
+    environment:
+      GOB_OBJECTSTORE_PASSWORD:
+      DATABASE_URL: "postgres://dataservices:insecure@database/dataservices"
+      DATA_DIR:
+    volumes:
+      - ./src:/app
+    command:
+        ./start_import.sh --create

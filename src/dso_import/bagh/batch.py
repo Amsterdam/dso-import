@@ -267,7 +267,7 @@ class ImportBagHTask(batch.BasicTask):
 class CreateBagHTables(batch.BasicTask):
     def process(self):
         processed = 0
-        with open("dso_import/datasets/bagh/bagh_create.sql", "r") as sql_file:
+        with open("dso_import/bagh/bagh_create.sql", "r") as sql_file:
             with connection.cursor() as c:
                 for sql in sqlparse.split(sql_file.read()):
                     if sql and not sql.isspace():
