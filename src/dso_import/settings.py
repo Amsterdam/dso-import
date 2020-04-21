@@ -9,7 +9,7 @@ env = environ.Env()
 # -- Environment
 
 BASE_DIR = str(environ.Path(__file__) - 2)
-DEBUG = env.bool("DJANGO_DEBUG", True)
+DEBUG = env.bool("DJANGO_DEBUG", False)
 
 # Paths
 STATIC_URL = "/v1/static/"
@@ -102,6 +102,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN, environment="dso-api", integrations=[DjangoIntegration()]
     )
 
+TIME_ZONE = 'Europe/Amsterdam'
 
 LOGGING = {
     "version": 1,

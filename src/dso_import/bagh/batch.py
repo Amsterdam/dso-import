@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 from collections import defaultdict
+from itertools import islice
 
 import sqlparse
 
@@ -57,7 +58,6 @@ class ImportBagHTask(batch.BasicTask):
         }
         self.geotype = kwargs.get("geotype", "multipolygon")
         self.extra_fields = kwargs.get("extra_fields")
-        self.stash = kwargs.get("stash")
 
     def get_non_pk_fields(self):
         return [x.attname for x in self.model._meta.get_fields() if not x.primary_key]
@@ -77,6 +77,7 @@ class ImportBagHTask(batch.BasicTask):
             self.reference_models[model_name] = set(
                 self.models[model_name].objects.values_list("id", flat=True)
             )
+        cursor.close()
 
     def after(self):
         cursor = connection.cursor()
@@ -125,10 +126,15 @@ class ImportBagHTask(batch.BasicTask):
         cursor.execute(f"DROP TABLE {self.temp_table}")
         self.model._meta.db_table = self.table
         self.reference_models.clear()
+        cursor.close()
 
     def process(self):
         entries = csv.process_csv(self.path, self.filename, self.process_row)
-        self.model.objects.bulk_create(entries, batch_size=batch.BATCH_SIZE)
+        while True:
+            slice = list(islice(entries, batch.BATCH_SIZE))
+            if not slice:
+                break
+            self.model.objects.bulk_create(slice)
 
     def process_row(self, r):
         values = self.process_row_common(r)
@@ -349,17 +355,44 @@ class ImportVerblijfsobjectTask(ImportBagHTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stash["pandrelatie"] = defaultdict(list)
-        self.pandrelatie = self.stash["pandrelatie"]
+        self.pandrelatiemodel = copy.deepcopy(self.models["verblijfsobjectpandrelatie"])
+        self.pandrelatie_table = self.pandrelatiemodel._meta.db_table
+        self.pandrelatie_temp_table = f"{self.__class__.dataset}_pr_temp"
+        self.pandrelatie = defaultdict(list)
+        self.pandrelatie_count = 0
         self.panden = set()
 
     def before(self):
         super().before()
         self.panden = set(self.models["pand"].objects.values_list("id", flat=True))
+        cursor = connection.cursor()
+        cursor.execute(f"DROP TABLE IF EXISTS {self.pandrelatie_temp_table}")
+        cursor.execute(
+            f"CREATE TEMPORARY TABLE {self.pandrelatie_temp_table} AS TABLE {self.pandrelatie_table} WITH NO DATA"
+        )
+        self.pandrelatiemodel._meta.db_table = self.pandrelatie_temp_table
 
     def after(self):
+        self.save_pandrelatie()
+        cursor = connection.cursor()
+        with transaction.atomic():
+            cursor.execute(f"TRUNCATE {self.pandrelatie_table}")
+            cursor.execute(f"INSERT INTO  {self.pandrelatie_table} SELECT * FROM {self.pandrelatie_temp_table}")
+        self.model._meta.db_table = self.pandrelatie_table
         self.panden.clear()
         super().after()
+
+    def gen_pand_vbo_objects(self):
+            for pand_id, vbo_ids in self.pandrelatie.items():
+                for vbo_id in vbo_ids:
+                    id1 = f"{vbo_id}_{pand_id}"
+                    yield self.pandrelatiemodel(id=id1, verblijfsobject_id=vbo_id, pand_id=pand_id)
+
+    def save_pandrelatie(self):
+        entries = self.gen_pand_vbo_objects()
+        self.pandrelatiemodel.objects.bulk_create(entries, batch_size=batch.BATCH_SIZE)
+        self.pandrelatie.clear()
+        self.pandrelatie_count = 0
 
     def process_row(self, r):
         result = super().process_row(r)
@@ -379,34 +412,16 @@ class ImportVerblijfsobjectTask(ImportBagHTask):
                         )
                     else:
                         self.pandrelatie[pand_id].append(id)
+                        self.pandrelatie_count += 1
+                        if self.pandrelatie_count >= batch.BATCH_SIZE:
+                            self.save_pandrelatie()
+                            log.info("saving pandrelaties")
+
         return result
 
 
 class ImportNummeraanduidingTask(ImportBagHTask):
     name = "nummeraanduiding"
-
-
-class ImportVerblijfsobjectPandRelatieTask(ImportBagHTask):
-    name = "verblijfsobjectpandrelatie"
-
-    def process(self):
-        def gen_pand_vbo_objects(dict1: dict):
-            for pand_id, vbo_ids in dict1.items():
-                for vbo_id in vbo_ids:
-                    id1 = f"{vbo_id}_{pand_id}"
-                    yield self.model(id=id1, verblijfsobject_id=vbo_id, pand_id=pand_id)
-
-        entries = gen_pand_vbo_objects(self.stash["pandrelatie"])
-        self.model.objects.bulk_create(entries, batch_size=batch.BATCH_SIZE)
-        self.stash["pandrelatie"].clear()
-
-    def after(self):
-        cursor = connection.cursor()
-        with transaction.atomic():
-            cursor.execute(f"TRUNCATE {self.table}")
-            cursor.execute(f"INSERT INTO  {self.table} SELECT * FROM {self.temp_table}")
-        self.model._meta.db_table = self.table
-        self.reference_models.clear()
 
 
 class ImportBagHJob(batch.BasicJob):
@@ -427,11 +442,9 @@ class ImportBagHJob(batch.BasicJob):
             model._meta.model_name: model for model in dataset.create_models()
         }
         self.create = kwargs.get("create", False)
-        self.stash = {}
 
     def __del__(self):
         os.environ.pop("SHAPE_ENCODING", None)
-        self.stash.clear()
 
     def tasks(self):
         tasks1 = []
@@ -549,13 +562,6 @@ class ImportBagHJob(batch.BasicJob):
                             "heeftIn:BAG.NAG.volgnummerNevenadres",
                         ),
                     },
-                    stash=self.stash,
-                ),
-                ImportVerblijfsobjectPandRelatieTask(
-                    models=self.models,
-                    gob_path="bag",
-                    stash=self.stash,
-                    references=["verblijfsobject", "pand"],
                 ),
                 # large. 500.000
                 ImportNummeraanduidingTask(
