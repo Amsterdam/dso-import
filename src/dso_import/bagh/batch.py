@@ -178,7 +178,7 @@ class ImportBagHTask(batch.BasicTask):
             else:
                 if eind_geldigheid is None:
                     # Only log when is is the current entity
-                    log.warning(f"{self.name.title()} {id} has no geometry")
+                    log.warning(f"{self.name.title()} {id1} has no geometry")
                 geometrie = None
             values["geometrie"] = geometrie
 
