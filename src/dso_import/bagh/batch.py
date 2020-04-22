@@ -58,6 +58,7 @@ class ImportBagHTask(batch.BasicTask):
         }
         self.geotype = kwargs.get("geotype", "multipolygon")
         self.extra_fields = kwargs.get("extra_fields")
+        self.count_no_ref = 0
 
     def get_non_pk_fields(self):
         return [x.attname for x in self.model._meta.get_fields() if not x.primary_key]
@@ -127,6 +128,7 @@ class ImportBagHTask(batch.BasicTask):
         self.model._meta.db_table = self.table
         self.reference_models.clear()
         cursor.close()
+        log.info(f"Skipped no valid reference: {self.count_no_ref}")
 
     def process(self):
         entries = csv.process_csv(self.path, self.filename, self.process_row)
@@ -146,17 +148,17 @@ class ImportBagHTask(batch.BasicTask):
     def process_row_common(self, r):  # noqa: C901
         identificatie = r["identificatie"]
         volgnummer = int(r["volgnummer"])
-        id = create_id(identificatie, volgnummer)
+        id1 = create_id(identificatie, volgnummer)
         begin_geldigheid = csv.parse_date(r["beginGeldigheid"])
         eind_geldigheid = csv.parse_date(r["eindGeldigheid"]) or None
         if not csv.is_valid_date_range(begin_geldigheid, eind_geldigheid):
             log.error(
-                f"{self.name.title()} {id} has invalid geldigheid {begin_geldigheid} {eind_geldigheid}; skipping"  # noqa: E501
+                f"{self.name.title()} {id1} has invalid geldigheid {begin_geldigheid} {eind_geldigheid}; skipping"  # noqa: E501
             )
             return None
 
         values = {
-            "id": id,
+            "id": id1,
             "identificatie": identificatie,
             "volgnummer": volgnummer,
             "begin_geldigheid": begin_geldigheid,
@@ -170,7 +172,7 @@ class ImportBagHTask(batch.BasicTask):
                 geometrie = geo.get_geotype(wkt_geometrie, self.geotype)
                 if not geometrie:
                     log.error(
-                        f"{self.name.title()} {id} has no valid geometry; skipping"
+                        f"{self.name.title()} {id1} has no valid geometry; skipping"
                     )
                     return None
             else:
@@ -219,14 +221,15 @@ class ImportBagHTask(batch.BasicTask):
             fname = model_field_map[model_name]
             identificatie = r[f"{fname}.identificatie"]
             volgnummer = r[f"{fname}.volgnummer"] or "1"
-            id1 = create_id(identificatie, int(volgnummer))
-            if id1 and id1 not in self.reference_models[model_name]:
+            id_rel = create_id(identificatie, int(volgnummer))
+            if id_rel and id_rel not in self.reference_models[model_name]:
                 log.error(
-                    f"{self.name.title()} {id} has invalid id for {model_name} ; skipping"
+                    f"{self.name.title()} {id1} has invalid id {id_rel} for {model_name} ; skipping"
                 )
+                self.count_no_ref += 1
                 return None
             else:
-                values[f"{model_name}_id"] = id1
+                values[f"{model_name}_id"] = id_rel
         self.log_progress()
         return values
 
