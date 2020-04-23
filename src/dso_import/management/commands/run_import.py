@@ -29,11 +29,10 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--create",
-            action="store_true",
-            dest="create",
-            default=False,
-            help="Only update dataset",
+            "--bagh_start",
+            nargs=1,
+            default=['gemeente'],
+            help="Start task for import",
         )
 
     def handle(self, *args, **options):
@@ -46,6 +45,7 @@ class Command(BaseCommand):
 
         sets = [ds for ds in self.ordered if ds in datasets]  # enforce order
 
+        start_task = options['bagh_start'][0]
         for one_ds in sets:
             for job_class in self.imports[one_ds]:
-                batch.execute(job_class(create=options["create"]))
+                batch.execute(job_class(), start_task)

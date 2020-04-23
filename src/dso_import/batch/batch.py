@@ -16,10 +16,15 @@ class BasicJob:
         pass
 
 
-def execute(job: BasicJob):
+def execute(job: BasicJob, start: str = None):
     log.info("Starting job: %s [%s]", job.name, job.__class__.__name__)
+    tasks = job.tasks()
+    if start:
+        start_indices = { e[1].name:e[0] for e in enumerate(tasks)}
+        start_index = start_indices[start]
+        tasks = tasks[start_index:]
 
-    for task in job.tasks():
+    for task in tasks:
         _execute_task(task)
 
     log.info("Finished job: %s: [%s]", job.name, job.__class__.__name__)

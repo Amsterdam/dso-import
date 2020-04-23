@@ -1,4 +1,3 @@
-import copy
 import logging
 import os
 from collections import defaultdict
@@ -47,7 +46,7 @@ class ImportBagHTask(batch.BasicTask):
         self.temp_table = f"{self.__class__.dataset}_temp"
         self.path = kwargs.get("path")
         self.models = kwargs["models"]
-        self.model = copy.deepcopy(self.models[self.__class__.name])
+        self.model = self.models[self.__class__.name]
         self.gob_path = kwargs.get("gob_path", "bag")
         self.gob_id = {"bag": "BAG", "gebieden": "GBD"}[self.gob_path]
 
@@ -74,7 +73,9 @@ class ImportBagHTask(batch.BasicTask):
         if self.path:
             download_file(os.path.join(self.source_path, self.filename))
 
-        for model_name in self.reference_models:
+        for model_name in self.reference_models.keys():
+            # cursor.execute(f"SELECT id from {self.models[model_name]._meta.db_table}")
+            # self.reference_models[model_name] = set(chain.from_iterable(cursor.fetchall()))
             self.reference_models[model_name] = set(
                 self.models[model_name].objects.values_list("id", flat=True)
             )
@@ -85,9 +86,10 @@ class ImportBagHTask(batch.BasicTask):
         cursor.execute(f"ALTER TABLE {self.temp_table} ADD PRIMARY KEY(id)")
         cursor.execute(f"CREATE INDEX ON {self.temp_table}(identificatie)")
 
+        fail = False
         if self.do_date_checks() > 0:
             log.error(f"Data invalid. Skip table {self.table}")
-            return
+            fail = True
 
         # validate_geometry(models.Stadsdeel)
 
@@ -102,7 +104,9 @@ class ImportBagHTask(batch.BasicTask):
         (count,) = cursor.fetchone()
         if count > 0:
             log.error(f"Rows deleted. Data invalid. Skip table {self.table}")
-            return
+            fail = True
+        if fail:
+            raise ValueError("Stopped import. Do not continue because of errors")
         with transaction.atomic():
             cursor.execute(
                 f"""
@@ -128,7 +132,8 @@ class ImportBagHTask(batch.BasicTask):
         self.model._meta.db_table = self.table
         self.reference_models.clear()
         cursor.close()
-        log.info(f"Skipped no valid reference: {self.count_no_ref}")
+        if self.count_no_ref:
+            log.info(f"Skipped no valid reference: {self.count_no_ref}")
 
     def process(self):
         entries = csv.process_csv(self.path, self.filename, self.process_row)
@@ -217,7 +222,7 @@ class ImportBagHTask(batch.BasicTask):
             "standplaats": "adresseert:BAG.SPS",
             "verblijfsobject": "adresseert:BAG.VOT",
         }
-        for model_name in self.reference_models:
+        for model_name in self.reference_models.keys():
             fname = model_field_map[model_name]
             identificatie = r[f"{fname}.identificatie"]
             volgnummer = r[f"{fname}.volgnummer"] or "1"
@@ -268,6 +273,8 @@ class ImportBagHTask(batch.BasicTask):
 
 
 class CreateBagHTables(batch.BasicTask):
+    name = "create_tables"
+
     def process(self):
         processed = 0
         with open("dso_import/bagh/bagh_create.sql", "r") as sql_file:
@@ -358,7 +365,7 @@ class ImportVerblijfsobjectTask(ImportBagHTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pandrelatiemodel = copy.deepcopy(self.models["verblijfsobjectpandrelatie"])
+        self.pandrelatiemodel = self.models["verblijfsobjectpandrelatie"]
         self.pandrelatie_table = self.pandrelatiemodel._meta.db_table
         self.pandrelatie_temp_table = f"{self.__class__.dataset}_pr_temp"
         self.pandrelatie = defaultdict(list)
@@ -382,7 +389,7 @@ class ImportVerblijfsobjectTask(ImportBagHTask):
         with transaction.atomic():
             cursor.execute(f"TRUNCATE {self.pandrelatie_table}")
             cursor.execute(f"INSERT INTO  {self.pandrelatie_table} SELECT * FROM {self.pandrelatie_temp_table}")
-        self.model._meta.db_table = self.pandrelatie_table
+        self.pandrelatiemodel._meta.db_table = self.pandrelatie_table
         self.panden.clear()
 
     def gen_pand_vbo_objects(self):
@@ -444,148 +451,141 @@ class ImportBagHJob(batch.BasicJob):
         self.models = {
             model._meta.model_name: model for model in dataset.create_models()
         }
-        self.create = kwargs.get("create", False)
 
     def __del__(self):
         os.environ.pop("SHAPE_ENCODING", None)
 
     def tasks(self):
-        tasks1 = []
-        if self.create:
-            tasks1.append(CreateBagHTables())
-
-        tasks1.extend(
-            [
-                # no-dependencies.
-                ImportGemeenteTask(models=self.models),
-                ImportWoonplaatsTask(
-                    path=self.data_dir, models=self.models, use=["gemeente"]
-                ),
-                ImportStadsdeelTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["gemeente"],
-                ),
-                ImportGgwGebied(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["stadsdeel"],
-                ),
-                ImportGgwPraktijkGebied(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["stadsdeel"],
-                ),
-                ImportWijkTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["stadsdeel", "ggw_gebied"],
-                    extra_fields={"cbs_code": lambda r: r["cbsCode"],},
-                ),
-                ImportBuurtTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["wijk", "ggw_gebied", "stadsdeel"],
-                    extra_fields={"cbs_code": lambda r: r["cbsCode"],},
-                ),
-                ImportBouwblokTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="gebieden",
-                    references=["buurt"],
-                ),
-                ImportOpenbareRuimteTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    references=["woonplaats"],
-                    extra_fields={"naam_nen": lambda r: r["naamNEN"],},
-                ),
-                ImportLigplaatsTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    geotype="polygon",
-                    references=["buurt"],
-                ),
-                ImportStandplaatsTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    geotype="polygon",
-                    references=["buurt"],
-                ),
-                ImportPandTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    geotype="polygon",
-                ),
-                ImportVerblijfsobjectTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    geotype="point",
-                    references=["buurt"],
-                    extra_fields={
-                        "oppervlakte": lambda r: int_or_none(r["oppervlakte"]),
-                        "verdieping_toegang": lambda r: int_or_none(
-                            r["verdiepingToegang"]
-                        ),
-                        "hoogste_bouwlaag": lambda r: int_or_none(r["hoogsteBouwlaag"]),
-                        "laagste_bouwlaag": lambda r: int_or_none(r["laagsteBouwlaag"]),
-                        "aantal_kamers": lambda r: int_or_none(r["aantalKamers"]),
-                        "eigendomsverhouding": lambda r: r["eigendomsverhouding"],
-                        "gebruiksdoel": lambda r: r["gebruiksdoel"].split("|"),
-                        "gebruiksdoel_woonfunctie": lambda r: r[
-                            "gebruiksdoelWoonfunctie"
-                        ]
-                        or None,
-                        "gebruiksdoel_gezondheidszorgfunctie": lambda r: r[
-                            "gebruiksdoelGezondheidszorgfunctie"
-                        ]
-                        or None,
-                        "toegang": lambda r: r["toegang"].split("|")
-                        if r["toegang"]
-                        else [],
-                        "redenopvoer": lambda r: r["redenopvoer"] or None,
-                        "redenafvoer": lambda r: r["redenopvoer"] or None,
-                        "heeftin_hoofdadres_id": lambda r: create_id(
-                            r["heeftIn:BAG.NAG.identificatieHoofdadres"],
-                            int_or_none(r["heeftIn:BAG.NAG.volgnummerHoofdadres"]),
-                        ),
-                        "heeftin_nevenadres_id": lambda r: create_ids(
-                            r,
-                            "heeftIn:BAG.NAG.identificatieNevenadres",
-                            "heeftIn:BAG.NAG.volgnummerNevenadres",
-                        ),
-                    },
-                ),
-                # large. 500.000
-                ImportNummeraanduidingTask(
-                    path=self.data_dir,
-                    models=self.models,
-                    gob_path="bag",
-                    references=[
-                        "ligplaats",
-                        "standplaats",
-                        "verblijfsobject",
-                        "openbare_ruimte",
-                    ],
-                    extra_fields={
-                        "huisnummer": lambda r: r["huisnummer"],
-                        "huisletter": lambda r: r["huisletter"] or None,
-                        "huisnummer_toevoeging": lambda r: r["huisnummertoevoeging"]
-                        or None,
-                        "postcode": lambda r: r["postcode"],
-                        "type_adres": lambda r: r["typeAdres"],
-                    },
-                ),
-            ]
-        )
-        return tasks1
+        return [
+            CreateBagHTables(),
+            # no-dependencies.
+            ImportGemeenteTask(models=self.models),
+            ImportWoonplaatsTask(
+                path=self.data_dir, models=self.models, use=["gemeente"]
+            ),
+            ImportStadsdeelTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["gemeente"],
+            ),
+            ImportGgwGebied(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["stadsdeel"],
+            ),
+            ImportGgwPraktijkGebied(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["stadsdeel"],
+            ),
+            ImportWijkTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["stadsdeel", "ggw_gebied"],
+                extra_fields={"cbs_code": lambda r: r["cbsCode"], },
+            ),
+            ImportBuurtTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["wijk", "ggw_gebied", "stadsdeel"],
+                extra_fields={"cbs_code": lambda r: r["cbsCode"], },
+            ),
+            ImportBouwblokTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="gebieden",
+                references=["buurt"],
+            ),
+            ImportOpenbareRuimteTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                references=["woonplaats"],
+                extra_fields={"naam_nen": lambda r: r["naamNEN"], },
+            ),
+            ImportLigplaatsTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                geotype="polygon",
+                references=["buurt"],
+            ),
+            ImportStandplaatsTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                geotype="polygon",
+                references=["buurt"],
+            ),
+            ImportPandTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                geotype="polygon",
+            ),
+            ImportVerblijfsobjectTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                geotype="point",
+                references=["buurt"],
+                extra_fields={
+                    "oppervlakte": lambda r: int_or_none(r["oppervlakte"]),
+                    "verdieping_toegang": lambda r: int_or_none(
+                        r["verdiepingToegang"]
+                    ),
+                    "hoogste_bouwlaag": lambda r: int_or_none(r["hoogsteBouwlaag"]),
+                    "laagste_bouwlaag": lambda r: int_or_none(r["laagsteBouwlaag"]),
+                    "aantal_kamers": lambda r: int_or_none(r["aantalKamers"]),
+                    "eigendomsverhouding": lambda r: r["eigendomsverhouding"],
+                    "gebruiksdoel": lambda r: r["gebruiksdoel"].split("|"),
+                    "gebruiksdoel_woonfunctie": lambda r: r[
+                                                              "gebruiksdoelWoonfunctie"
+                                                          ]
+                                                          or None,
+                    "gebruiksdoel_gezondheidszorgfunctie": lambda r: r[
+                                                                         "gebruiksdoelGezondheidszorgfunctie"
+                                                                     ]
+                                                                     or None,
+                    "toegang": lambda r: r["toegang"].split("|")
+                    if r["toegang"]
+                    else [],
+                    "redenopvoer": lambda r: r["redenopvoer"] or None,
+                    "redenafvoer": lambda r: r["redenopvoer"] or None,
+                    "heeftin_hoofdadres_id": lambda r: create_id(
+                        r["heeftIn:BAG.NAG.identificatieHoofdadres"],
+                        int_or_none(r["heeftIn:BAG.NAG.volgnummerHoofdadres"]),
+                    ),
+                    "heeftin_nevenadres_id": lambda r: create_ids(
+                        r,
+                        "heeftIn:BAG.NAG.identificatieNevenadres",
+                        "heeftIn:BAG.NAG.volgnummerNevenadres",
+                    ),
+                },
+            ),
+            # large. 500.000
+            ImportNummeraanduidingTask(
+                path=self.data_dir,
+                models=self.models,
+                gob_path="bag",
+                references=[
+                    "ligplaats",
+                    "standplaats",
+                    "verblijfsobject",
+                    "openbare_ruimte",
+                ],
+                extra_fields={
+                    "huisnummer": lambda r: r["huisnummer"],
+                    "huisletter": lambda r: r["huisletter"] or None,
+                    "huisnummer_toevoeging": lambda r: r["huisnummertoevoeging"]
+                                                       or None,
+                    "postcode": lambda r: r["postcode"],
+                    "type_adres": lambda r: r["typeAdres"],
+                },
+            ),
+        ]
