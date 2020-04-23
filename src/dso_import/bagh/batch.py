@@ -6,10 +6,11 @@ from itertools import islice
 import sqlparse
 
 from django.db import connection, transaction
+from schematools.contrib.django.models import Dataset
+
 from dso_import import settings
 from dso_import.batch import batch, csv, geo
 from dso_import.batch.objectstore import download_file
-from dso_api.datasets.models import Dataset
 
 GOB_SHAPE_ENCODING = "utf-8"
 

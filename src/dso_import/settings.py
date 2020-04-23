@@ -48,43 +48,14 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "gisserver",
     # Own apps
-    "dso_api.datasets",
-    "dso_api.dynamic_api",
+    "schematools.contrib.django",
     "dso_import",
 ]
 
 MIDDLEWARE = [
 ]
 
-# ROOT_URLCONF = "dso_api.urls"
-
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],
-        "OPTIONS": {
-            "loaders": [
-                "django.template.loaders.filesystem.Loader",
-                "django.template.loaders.app_directories.Loader",
-            ],
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.messages.context_processors.messages",
-            ],
-        },
-    },
-]
-
-if not DEBUG:
-    # Keep templates in memory
-    TEMPLATES[0]["OPTIONS"]["loaders"] = [
-        ("django.template.loaders.cached.Loader", TEMPLATES[0]["OPTIONS"]["loaders"]),
-    ]
-
 # -- Services
-
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 DATABASES = {
     "default": env.db_url(
@@ -99,7 +70,7 @@ locals().update(env.email_url(default="smtp://"))
 SENTRY_DSN = env.str("SENTRY_DSN", default="")
 if SENTRY_DSN:
     sentry_sdk.init(
-        dsn=SENTRY_DSN, environment="dso-api", integrations=[DjangoIntegration()]
+        dsn=SENTRY_DSN, environment="dso-import", integrations=[DjangoIntegration()]
     )
 
 TIME_ZONE = 'Europe/Amsterdam'
@@ -127,59 +98,6 @@ LOGGING = {
     },
 }
 
-# -- Third party app settings
-
-CORS_ORIGIN_ALLOW_ALL = True
-
-HEALTH_CHECKS = {
-    "app": lambda request: True,
-    "database": "django_healthchecks.contrib.check_database",
-    # 'cache': 'django_healthchecks.contrib.check_cache_default',
-    # 'ip': 'django_healthchecks.contrib.check_remote_addr',
-}
-HEALTH_CHECKS_ERROR_CODE = 503
-
-REST_FRAMEWORK = dict(
-    PAGE_SIZE=20,
-    MAX_PAGINATE_BY=20,
-    UNAUTHENTICATED_USER={},
-    UNAUTHENTICATED_TOKEN={},
-    DEFAULT_AUTHENTICATION_CLASSES=[
-    ],
-    COERCE_DECIMAL_TO_STRING=True,
-)
-
-# -- Amsterdam oauth settings
-
-# The following JWKS data was obtained in the authz project :  jwkgen -create -alg ES256
-# This is a test public/private key def and added for testing .
-JWKS_TEST_KEY = """
-    {
-        "keys": [
-            {
-                "kty": "EC",
-                "key_ops": [
-                    "verify",
-                    "sign"
-                ],
-                "kid": "2aedafba-8170-4064-b704-ce92b7c89cc6",
-                "crv": "P-256",
-                "x": "6r8PYwqfZbq_QzoMA4tzJJsYUIIXdeyPA27qTgEJCDw=",
-                "y": "Cf2clfAfFuuCB06NMfIat9ultkMyrMQO9Hd2H7O9ZVE=",
-                "d": "N1vu0UQUp0vLfaNeM0EDbl4quvvL6m_ltjoAXXzkI3U="
-            }
-        ]
-    }
-"""
-
-DATAPUNT_AUTHZ = {
-    "JWKS": os.getenv("PUB_JWKS", JWKS_TEST_KEY),
-    "ALWAYS_OK": False,
-}
-
-# -- Local app settings
-
-AMSTERDAM_SCHEMA = {"geosearch_disabled_datasets": ["bag"]}
 
 PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 DATA_DIR = os.getenv("DATA_DIR", os.path.abspath(os.path.join(PROJECT_DIR, "data")))
