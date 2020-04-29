@@ -10,7 +10,7 @@ from django.db import connection, transaction
 from dso_import import settings
 from dso_import.batch import batch, csv, geo
 from dso_import.batch.objectstore import download_file
-from dso_api.datasets.models import Dataset
+from schematools.contrib.django.models import Dataset
 
 GOB_SHAPE_ENCODING = "utf-8"
 

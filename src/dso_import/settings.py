@@ -48,8 +48,7 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "gisserver",
     # Own apps
-    "dso_api.datasets",
-    "dso_api.dynamic_api",
+    "schematools.contrib.django",
     "dso_import",
 ]
 

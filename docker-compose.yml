@@ -5,8 +5,8 @@ services:
     ports:
       - "5415:5432"
     environment:
-      POSTGRES_DB: dso_api
-      POSTGRES_USER: dso_api
+      POSTGRES_DB: dataservices
+      POSTGRES_USER: dataservices
       POSTGRES_PASSWORD: insecure
   importer:
     image: amsterdam/python:3.8-buster

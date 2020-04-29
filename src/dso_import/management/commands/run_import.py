@@ -5,6 +5,7 @@ from django.core.management import BaseCommand
 
 from dso_import.batch import batch
 from dso_import.bagh.batch import ImportBagHJob
+from dso_import.parkeervakken.batch import ImportParkeervakkenJob
 
 log = logging.getLogger(__name__)
 
@@ -14,9 +15,13 @@ class Command(BaseCommand):
     requires_system_checks = False
     ordered = [
         "bagh",
+        "parkeervakken",
     ]
 
-    imports = dict(bagh=[ImportBagHJob])
+    imports = dict(
+        bagh=[ImportBagHJob],
+        parkeervakken=[ImportParkeervakkenJob],
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
