@@ -101,3 +101,5 @@ LOGGING = {
 
 PROJECT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 DATA_DIR = os.getenv("DATA_DIR", os.path.abspath(os.path.join(PROJECT_DIR, "data")))
+
+AMSTERDAM_SCHEMA = {"geosearch_disabled_datasets": ["bag"]}

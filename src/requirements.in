@@ -1,3 +1,4 @@
-python-string-utils==0.6.0
-amsterdam-schema-tools==0.4.1
+Django == 3.0.8
+python-string-utils == 1.0.0
+amsterdam-schema-tools[django] == 0.8.13
 

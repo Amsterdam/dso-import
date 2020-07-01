@@ -4,17 +4,6 @@ This wil run the import for data needed in de dso-api.
 
 For this import it uses the dynamically created models in dso-api.
 
-Therefore we need the dso-api imported as package.
-
-That package can be installed with :
-
-    pip install ../dso-api/src
-    
-or with
-
-    pip  install git+https://github.com/Amsterdam/dso-api.git@df28a53faba4c8e96f5e54a8b684978c1b3a5435#egg=dso-api\&subdirectory=src
-
-Or from any other location where dso-api is located.
 
 For the historical bag import files need to be retrieved frm the GOB objectstore,
 
@@ -26,7 +15,7 @@ And the database url where this should be imported :
 
     export DATABASE_URL=postgres://dso_api:insecure@localhost:5415/dso_api
 
-Then run the following command fromn the _src_ directory:
+Then run the following command from the _src_ directory:
 
     python manage.py run_import bagh 
     
