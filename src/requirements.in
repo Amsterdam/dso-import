@@ -1,5 +1,10 @@
 Django == 3.0.8
+djangorestframework == 3.11.0
+djangorestframework-gis == 0.15
+drf-spectacular == 0.8.5
 python-string-utils == 1.0.0
 amsterdam-schema-tools[django] == 0.9.0
 sentry-sdk == 0.15.1
+python-keystoneclient == 4.0.0
+python-swiftclient == 3.9.0
 
