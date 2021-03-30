@@ -4,62 +4,175 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-amsterdam-schema-tools[django]==0.9.0  # via -r requirements.in
-asgiref==3.2.10           # via django
-attrs==19.3.0             # via jsonschema
-certifi==2020.6.20        # via requests, sentry-sdk
-chardet==3.0.4            # via requests
-click==7.1.2              # via amsterdam-schema-tools, mappyfile
-debtcollector==2.1.0      # via oslo.config, oslo.utils, python-keystoneclient
-defusedxml==0.6.0         # via django-gisserver
-django-environ==0.4.5     # via amsterdam-schema-tools
-django-gisserver==0.8.3   # via amsterdam-schema-tools
-django-postgres-unlimited-varchar==1.1.0  # via amsterdam-schema-tools
-django==3.0.8             # via -r requirements.in, amsterdam-schema-tools, django-gisserver, django-postgres-unlimited-varchar, djangorestframework
-djangorestframework-gis==0.15  # via -r requirements.in
-djangorestframework==3.11.0  # via -r requirements.in, djangorestframework-gis
-drf-spectacular==0.8.5    # via -r requirements.in
-geoalchemy2==0.8.4        # via amsterdam-schema-tools
-idna==2.10                # via requests
-iso8601==0.1.12           # via keystoneauth1, oslo.utils
-jinja2==2.11.2            # via amsterdam-schema-tools
-jsonref==0.2              # via mappyfile
-jsonschema==3.2.0         # via amsterdam-schema-tools, mappyfile
-keystoneauth1==4.2.0      # via python-keystoneclient
-lark-parser==0.7.8        # via mappyfile
-mappyfile==0.8.4          # via amsterdam-schema-tools
-markupsafe==1.1.1         # via jinja2
-msgpack==1.0.0            # via oslo.serialization
-ndjson==0.3.1             # via amsterdam-schema-tools
-netaddr==0.7.20           # via oslo.config, oslo.utils
-netifaces==0.10.9         # via oslo.utils
-orjson==3.2.0             # via django-gisserver
-os-service-types==1.7.0   # via keystoneauth1
-oslo.config==8.2.0        # via python-keystoneclient
-oslo.i18n==5.0.0          # via oslo.config, oslo.utils, python-keystoneclient
-oslo.serialization==4.0.0  # via python-keystoneclient
-oslo.utils==4.2.2         # via oslo.serialization, python-keystoneclient
-pbr==5.4.5                # via debtcollector, keystoneauth1, oslo.i18n, oslo.serialization, oslo.utils, python-keystoneclient, stevedore
-psycopg2==2.8.5           # via amsterdam-schema-tools
-pyparsing==2.4.7          # via oslo.utils
-pyrsistent==0.16.0        # via jsonschema
-python-dateutil==2.8.1    # via amsterdam-schema-tools
-python-keystoneclient==4.0.0  # via -r requirements.in
-python-string-utils==1.0.0  # via -r requirements.in, amsterdam-schema-tools
-python-swiftclient==3.9.0  # via -r requirements.in
-pytz==2020.1              # via django, oslo.serialization, oslo.utils
-pyyaml==5.3.1             # via drf-spectacular, oslo.config
-requests==2.24.0          # via amsterdam-schema-tools, keystoneauth1, oslo.config, python-keystoneclient, python-swiftclient
-rfc3986==1.4.0            # via oslo.config
-sentry-sdk==0.15.1        # via -r requirements.in
-shapely==1.7.0            # via amsterdam-schema-tools
-six==1.15.0               # via debtcollector, jsonschema, keystoneauth1, oslo.i18n, oslo.utils, python-dateutil, python-keystoneclient, python-swiftclient
-sqlalchemy==1.3.18        # via geoalchemy2
-sqlparse==0.3.1           # via django
-stevedore==2.0.1          # via keystoneauth1, oslo.config, python-keystoneclient
-uritemplate==3.0.1        # via drf-spectacular
-urllib3==1.25.9           # via requests, sentry-sdk
-wrapt==1.12.1             # via debtcollector
+amsterdam-schema-tools[django]==0.9.0
+    # via -r requirements.in
+asgiref==3.2.10
+    # via django
+attrs==19.3.0
+    # via jsonschema
+certifi==2020.6.20
+    # via
+    #   requests
+    #   sentry-sdk
+chardet==3.0.4
+    # via requests
+click==7.1.2
+    # via
+    #   amsterdam-schema-tools
+    #   mappyfile
+debtcollector==2.1.0
+    # via
+    #   oslo.config
+    #   oslo.utils
+    #   python-keystoneclient
+defusedxml==0.6.0
+    # via django-gisserver
+django-environ==0.4.5
+    # via amsterdam-schema-tools
+django-gisserver==0.8.3
+    # via amsterdam-schema-tools
+django-postgres-unlimited-varchar==1.1.0
+    # via amsterdam-schema-tools
+django==3.0.12
+    # via
+    #   -r requirements.in
+    #   amsterdam-schema-tools
+    #   django-gisserver
+    #   django-postgres-unlimited-varchar
+    #   djangorestframework
+djangorestframework-gis==0.15
+    # via -r requirements.in
+djangorestframework==3.11.0
+    # via
+    #   -r requirements.in
+    #   djangorestframework-gis
+drf-spectacular==0.8.5
+    # via -r requirements.in
+geoalchemy2==0.8.4
+    # via amsterdam-schema-tools
+idna==2.10
+    # via requests
+iso8601==0.1.12
+    # via
+    #   keystoneauth1
+    #   oslo.utils
+jinja2==2.11.2
+    # via amsterdam-schema-tools
+jsonref==0.2
+    # via mappyfile
+jsonschema==3.2.0
+    # via
+    #   amsterdam-schema-tools
+    #   mappyfile
+keystoneauth1==4.2.0
+    # via python-keystoneclient
+lark-parser==0.7.8
+    # via mappyfile
+mappyfile==0.8.4
+    # via amsterdam-schema-tools
+markupsafe==1.1.1
+    # via jinja2
+msgpack==1.0.0
+    # via oslo.serialization
+ndjson==0.3.1
+    # via amsterdam-schema-tools
+netaddr==0.7.20
+    # via
+    #   oslo.config
+    #   oslo.utils
+netifaces==0.10.9
+    # via oslo.utils
+orjson==3.2.0
+    # via django-gisserver
+os-service-types==1.7.0
+    # via keystoneauth1
+oslo.config==8.2.0
+    # via python-keystoneclient
+oslo.i18n==5.0.0
+    # via
+    #   oslo.config
+    #   oslo.utils
+    #   python-keystoneclient
+oslo.serialization==4.0.0
+    # via python-keystoneclient
+oslo.utils==4.2.2
+    # via
+    #   oslo.serialization
+    #   python-keystoneclient
+pbr==5.4.5
+    # via
+    #   debtcollector
+    #   keystoneauth1
+    #   oslo.i18n
+    #   oslo.serialization
+    #   oslo.utils
+    #   python-keystoneclient
+    #   stevedore
+psycopg2==2.8.5
+    # via amsterdam-schema-tools
+pyparsing==2.4.7
+    # via oslo.utils
+pyrsistent==0.16.0
+    # via jsonschema
+python-dateutil==2.8.1
+    # via amsterdam-schema-tools
+python-keystoneclient==4.0.0
+    # via -r requirements.in
+python-string-utils==1.0.0
+    # via
+    #   -r requirements.in
+    #   amsterdam-schema-tools
+python-swiftclient==3.9.0
+    # via -r requirements.in
+pytz==2020.1
+    # via
+    #   django
+    #   oslo.serialization
+    #   oslo.utils
+pyyaml==5.3.1
+    # via
+    #   drf-spectacular
+    #   oslo.config
+requests==2.24.0
+    # via
+    #   amsterdam-schema-tools
+    #   keystoneauth1
+    #   oslo.config
+    #   python-keystoneclient
+    #   python-swiftclient
+rfc3986==1.4.0
+    # via oslo.config
+sentry-sdk==0.15.1
+    # via -r requirements.in
+shapely==1.7.0
+    # via amsterdam-schema-tools
+six==1.15.0
+    # via
+    #   debtcollector
+    #   jsonschema
+    #   keystoneauth1
+    #   oslo.i18n
+    #   oslo.utils
+    #   python-dateutil
+    #   python-keystoneclient
+    #   python-swiftclient
+sqlalchemy==1.3.18
+    # via geoalchemy2
+sqlparse==0.3.1
+    # via django
+stevedore==2.0.1
+    # via
+    #   keystoneauth1
+    #   oslo.config
+    #   python-keystoneclient
+uritemplate==3.0.1
+    # via drf-spectacular
+urllib3==1.25.9
+    # via
+    #   requests
+    #   sentry-sdk
+wrapt==1.12.1
+    # via debtcollector
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
