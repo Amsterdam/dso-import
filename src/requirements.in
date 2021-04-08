@@ -1,5 +1,5 @@
+djangorestframework == 3.11.2
 Django == 3.0.12
-djangorestframework == 3.11.0
 djangorestframework-gis == 0.15
 drf-spectacular == 0.8.5
 python-string-utils == 1.0.0
