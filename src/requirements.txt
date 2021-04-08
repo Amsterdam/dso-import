@@ -129,7 +129,7 @@ pytz==2020.1
     #   django
     #   oslo.serialization
     #   oslo.utils
-pyyaml==5.3.1
+pyyaml==5.4
     # via
     #   drf-spectacular
     #   oslo.config
